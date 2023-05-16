@@ -3,7 +3,9 @@ import asyncio
 from aiocoap import *
 from datetime import datetime
 from flask_wtf import FlaskForm, RecaptchaField
+import redis
 
+redis_client = redis.Redis()
 views = Blueprint('views', __name__)
 
 class CaptchaForm(FlaskForm):
@@ -19,10 +21,29 @@ def home():
             return render_template("login.html", form=form)
         username = request.form.get("username")
         password = request.form.get("password")
-        flag = "0"
         fp.write("Time: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         fp.write("\nLogin attempt from: "+request.remote_addr+"\n")
         fp.write(f"Username: {username}" + "\nPassword: " + password + "\n")
+        # Check if account is locked
+        if redis_client.exists(username + '_locked'):
+            flash(f"Account locked. Please contact the administrator.",category="error")
+            return render_template("login.html", form=form)
+
+        # Retrieve the login attempts count
+        attempts = redis_client.get(username + '_attempts')
+        if attempts is None:
+            attempts = 0
+        else:
+            attempts = int(attempts)
+
+        # Check if maximum attempts reached
+        max_attempts = 3
+        if attempts >= max_attempts:
+            redis_client.set(username + '_locked', 1)
+            flash(f"Account locked. Please contact the administrator.",category="error")
+            return render_template("login.html", form=form)
+        flag = "0"
+        
         if "'" in username or '"' in username:
             flag = "1"
             fp.write("\nSQL Injection Detected\n")
@@ -32,6 +53,7 @@ def home():
                 fp.write("SQL Injection Failed\n")
             else:
                 fp.write("Login Failed\n")
+            redis_client.incr(username + '_attempts')
             fp.write("-----------------------------------------------\n")
             flash(f"Incorrect Username or Password for {username}",category="error")
             return render_template("login.html", form=form)
@@ -43,6 +65,7 @@ def home():
             else:
                 fp.write("Login Successful\n")
             fp.write("-----------------------------------------------\n")
+            redis_client.delete(username + '_attempts')
             return redirect(url_for('views.login_home'))
     else:
         fp.write("Time: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
