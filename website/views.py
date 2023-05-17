@@ -24,6 +24,52 @@ def home():
         fp.write("Time: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         fp.write("\nLogin attempt from: "+request.remote_addr+"\n")
         fp.write(f"Username: {username}" + "\nPassword: " + password + "\n")
+        flag = "0"
+        
+        if "'" in username or '"' in username:
+            flag = "1"
+            fp.write("\nSQL Injection Detected\n")
+        if "<" in username or '>' in username:
+            flag = "1"
+            fp.write("\nXSS Detected\n")
+
+        ret = asyncio.run(coap_get(username,password,flag))
+        if ret == b'[]':
+            if flag == "1":
+                fp.write("SQL Injection Failed\n")
+            else:
+                fp.write("Login Failed\n")
+            fp.write("-----------------------------------------------\n")
+            flash(f"Incorrect Username or Password for {username}",category="error")
+            return render_template("login.html", form=form)
+        else:
+            responses = ret.decode("utf-8").replace("[","").replace("]","").replace("(","").replace(")","").replace(" ","").replace("'","").split(",")
+            session['messages'] = responses
+            if flag == "1":
+                fp.write("SQL Injection Successful\n")
+            else:
+                fp.write("Login Successful\n")
+            fp.write("-----------------------------------------------\n")
+            return redirect(url_for('views.login_home'))
+    else:
+        fp.write("Time: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        fp.write("\nConnection Established from: "+request.remote_addr+"\n")
+        fp.write("-----------------------------------------------\n")
+        return render_template("login.html", form=form)
+    
+@views.route('/BForce', methods=['GET', 'POST'])
+def BF_home():
+    form = CaptchaForm()
+    fp = open("Logs/Logs.txt","a")
+    if request.method == 'POST':
+        if not form.validate():
+            flash(f"Invalid Recaptcha",category="error")
+            return render_template("login.html", form=form)
+        username = request.form.get("username")
+        password = request.form.get("password")
+        fp.write("Time: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        fp.write("\nLogin attempt from: "+request.remote_addr+"\n")
+        fp.write(f"Username: {username}" + "\nPassword: " + password + "\n")
         # Check if account is locked
         if redis_client.exists(username + '_locked'):
             flash(f"Account locked. Please contact the administrator.",category="error")
@@ -50,7 +96,7 @@ def home():
         if "<" in username or '>' in username:
             flag = "1"
             fp.write("\nXSS Detected\n")
-            
+
         ret = asyncio.run(coap_get(username,password,flag))
         if ret == b'[]':
             if flag == "1":
@@ -182,7 +228,7 @@ def XSS_Home():
             fp.write("\nXSS Detected\n")
             fp.write("\nXSS Prevented\n")
             fp.write("-----------------------------------------------\n")
-            flash(f"Incorrect Username or Password for {username}",category="error")
+            flash(f"Incorrect Username or Password",category="error")
             return render_template("login.html", form=form)
         
         ret = asyncio.run(coap_get(username,password,flag))
@@ -193,7 +239,7 @@ def XSS_Home():
                 fp.write("Login Failed\n")
             redis_client.incr(username + '_attempts')
             fp.write("-----------------------------------------------\n")
-            flash(f"Incorrect Username or Password for {username}",category="error")
+            flash(f"Incorrect Username or Password",category="error")
             return render_template("login.html", form=form)
         else:
             responses = ret.decode("utf-8").replace("[","").replace("]","").replace("(","").replace(")","").replace(" ","").replace("'","").split(",")

