@@ -1,14 +1,14 @@
 # IoT Honeypot
 
-This repository contains a deployed honeypot designed to detect and log unauthorized access attempts.
+This repository contains a simple IoT honeypot for application layer running on Constrained Application Protocol (CoAP).
 
 ## Features
 
-- **Attack Logs**: The `Attacks` directory contains logs of various attack attempts captured by the honeypot.
+- **Attack**: The `Attacks` directory contains various attacks that were attempted on the Honeypot. In case of an attack, the details of the attacker are collected and saved into the logs file.
 
-- **CoAP Honeypot**: The `CoAP` directory includes a Constrained Application Protocol (CoAP) honeypot setup to detect CoAP-based attacks.
+- **CoAP Honeypot**: The `CoAP` directory includes a Constrained Application Protocol (CoAP) honeypot setup.
 
-- **Web Interface**: The `website` directory hosts a simple web interface for visualizing attack data.
+- **Web Interface**: The `website` directory hosts a simple web interface which acts as the application that will be under attack and will be the honeypot.
 
 ## Getting Started
 
@@ -44,7 +44,7 @@ To set up and run the honeypot locally:
 
 5. **Access the web interface**:
 
-   Open your browser and navigate to `http://localhost:5000` to view the attack logs.
+   Open your browser and navigate to `http://localhost:5000` to view the website and run attakcs to create logs.
 
 ## Contributing
 
